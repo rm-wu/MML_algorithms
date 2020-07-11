@@ -1,5 +1,5 @@
 import numpy as np
-
+from plotly.offline import iplot
 #from scipy import linalg
 from ..utils import flip_svd, check_data
 
@@ -89,6 +89,44 @@ class PCA:
 
         pass
 
-    def plot_explained_variance(self):
+    def plot_explained_variance(self, interactive=True):
+        if interactive:
+            trace1 = dict(
+                type='bar',
+                x=['PC %s' % i for i in range(1, self.num_features + 1)],
+                                              # self.principal_components.shape[0] + 1)],
+                y=self.explained_variance_ratio,
+                name='Individual'
+            )
 
-        pass
+            trace2 = dict(
+                type='scatter',
+                x=['PC %s' % i for i in range(1, self.num_features + 1)],
+                y=np.cumsum(self.explained_variance_ratio),
+                name='Cumulative'
+            )
+
+            data = [trace1, trace2]
+
+            layout = dict(
+                title='Explained variance by different principal components',
+                yaxis=dict(
+                    title='Explained variance in percent'
+                ),
+                annotations=list([
+                    dict(
+                        x=1.16,
+                        y=1.05,
+                        xref='paper',
+                        yref='paper',
+                        text='Explained Variance',
+                        showarrow=False,
+                    )
+                ])
+            )
+
+            fig = dict(data=data, layout=layout)
+            iplot(fig, filename='selecting-principal-components')
+        else:
+            # TODO: add visualization with matplot
+            return
