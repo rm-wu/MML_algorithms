@@ -82,7 +82,7 @@ class PCA:
                 print(f"- Select the first {self.num_components} left-singular vectors of A with "
                       f"\nthe largest singular values as principal components of X")
                 print("-" * 50)
-                
+
         else:
             # num_features >>> num_samples
             # case B
@@ -126,11 +126,11 @@ class PCA:
             print()
             print(f"- Singular values:")
             for i in range(singular_values_.shape[0]):
-                print(f"\t{i} - {np.sqrt(singular_values_[i])}")
+                print(f"\t{i+1} - {np.sqrt(singular_values_[i])}")
             print()
             print(f"- Explained variance by each principal component")
             for i in range(self.explained_variance_ratio.shape[0]):
-                print(f"\tPC{i} :  {self.explained_variance_ratio[i]}")
+                print(f"\tPC{i+1} :  {self.explained_variance_ratio[i]}")
             print("-"*50)
 
         return self
@@ -155,9 +155,8 @@ class PCA:
             print("-" * 50)
         return scores_
 
-    def biplot(self):
-
-        pass
+    #def biplot(self):
+    #   pass
 
     def plot_explained_variance(self, interactive=True):
         if interactive:
