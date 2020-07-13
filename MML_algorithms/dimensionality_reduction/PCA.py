@@ -6,11 +6,13 @@ from matplotlib import pyplot as plt
 from ..utils import flip_svd, check_data
 
 class PCA:
-    def __init__(self, num_components=2, verbose=False):
+    def __init__(self, num_components=2, centering_data=True, verbose=False):
         '''
 
         :param num_components: int, default=2
             Number of components to keep
+        :param centering_data: bool, default=True
+            Centers the data matrix before performing PCA
         :param verbose: bool, default=False
             If True the class will print brief information about the operations performed by the class
         '''
@@ -29,6 +31,8 @@ class PCA:
         self.principal_components = None
         self.singular_values = None
 
+        self.centering_data = centering_data
+
     def fit(self, X):
         '''
 
@@ -37,24 +41,30 @@ class PCA:
         '''
         check_data(X)
         self.num_samples, self.num_features = X.shape
-        self.means = X.mean(axis=0)
-        X_ = X - self.means
-        singular_values_ = None
-
         if self.verbose:
             print("Begin PCA")
             print("-" * 50)
             print(f"Data matrix X dimensions : {self.num_samples} samples, {self.num_features} features")
             print("-" * 50)
-            print("Centering data matrix")
-            print(" - computing X columns means")
-            print(" - subtract the mean from the original data matrix")
-            print("-" * 50)
+
+        if self.centering_data:
+            self.means = X.mean(axis=0)
+            X_ = X - self.means
+            if self.verbose:
+                print("Centering data matrix")
+                print(" - computing X columns means")
+                print(" - subtract the mean from the original data matrix")
+                print("-" * 50)
+
+        singular_values_ = None
+
+
+
 
         if X.shape[0] > X.shape[1]:
             #TODO: change it to (not shape1 >>> shape0)
             # case A
-            A = (X_.T @ X_)
+            A = (X_.T @ X_) / (self.num_samples - 1)
             if self.verbose:
                 print("Case A (num_samples > num_features) :")
                 print(f"- Compute A = X'X")
@@ -142,12 +152,21 @@ class PCA:
 
     def transform(self, X):
         check_data(X)
-        X_ = X - self.means
-        scores_ = X_ @ self.principal_components[:self.num_components].T
+
         if self.verbose:
             print("Transform data : ")
             print("-" * 50)
-            print(f"- Centering data matrix ")
+
+        if self.centering_data:
+            X_ = X - self.means
+            if self.verbose:
+                print("Centering data matrix")
+                print("-" * 50)
+        else:
+            X_ = X
+        scores_ = X_ @ self.principal_components[:self.num_components].T
+
+        if self.verbose:
             print(f"- Computing projection")
             print(f"")
             print(f"\t- Original X dimensions : {X.shape[0]} x {X.shape[1]}")
@@ -195,4 +214,4 @@ class PCA:
 
         fig = dict(data=data, layout=layout)
         iplot(fig, filename='selecting-principal-components')
-        plotly.offline.init_notebook_mode(connected=True)
+        #plotly.offline.init_notebook_mode(connected=True)
