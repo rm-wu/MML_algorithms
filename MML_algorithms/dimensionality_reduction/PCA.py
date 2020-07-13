@@ -1,5 +1,6 @@
 import numpy as np
 from plotly.offline import iplot
+import plotly.offline
 from matplotlib import pyplot as plt
 
 from ..utils import flip_svd, check_data
@@ -158,42 +159,40 @@ class PCA:
     #def biplot(self):
     #   pass
 
-    def plot_explained_variance(self, interactive=True):
-        if interactive:
-            trace1 = dict(
-                type='bar',
-                x=['PC %s' % i for i in range(1, self.num_features + 1)],
-                y=self.explained_variance_ratio,
-                name='Individual'
-            )
+    def plot_explained_variance(self):
+        trace1 = dict(
+            type='bar',
+            x=['PC %s' % i for i in range(1, self.num_features + 1)],
+            y=self.explained_variance_ratio,
+            name='Individual'
+        )
 
-            trace2 = dict(
-                type='scatter',
-                x=['PC %s' % i for i in range(1, self.num_features + 1)],
-                y=np.cumsum(self.explained_variance_ratio),
-                name='Cumulative'
-            )
+        trace2 = dict(
+            type='scatter',
+            x=['PC %s' % i for i in range(1, self.num_features + 1)],
+            y=np.cumsum(self.explained_variance_ratio),
+            name='Cumulative'
+        )
 
-            data = [trace1, trace2]
+        data = [trace1, trace2]
 
-            layout = dict(
-                title='Explained variance by different principal components',
-                yaxis=dict(
-                    title='Explained variance in percent'
-                ),
-                annotations=list([
-                    dict(
-                        x=1.16,
-                        y=1.05,
-                        xref='paper',
-                        yref='paper',
-                        text='Explained Variance',
-                        showarrow=False,
-                    )
-                ])
-            )
+        layout = dict(
+            title='Explained variance by different principal components',
+            yaxis=dict(
+                title='Explained variance in percent'
+            ),
+            annotations=list([
+                dict(
+                    x=1.16,
+                    y=1.05,
+                    xref='paper',
+                    yref='paper',
+                    text='Explained Variance',
+                    showarrow=False,
+                )
+            ])
+        )
 
-            fig = dict(data=data, layout=layout)
-            iplot(fig, filename='selecting-principal-components')
-        else:
-            return
+        fig = dict(data=data, layout=layout)
+        iplot(fig, filename='selecting-principal-components')
+        plotly.offline.init_notebook_mode(connected=True)

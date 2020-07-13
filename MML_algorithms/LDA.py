@@ -1,14 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from scipy import linalg
-import seaborn as sns
-import pandas as pd
 
-from .utils import  check_data
-from sklearn.preprocessing import StandardScaler #TODO: replace
-# TODO: Bi-plot visualization https://stats.stackexchange.com/questions/82497/can-the-scaling-values-in-a-linear-discriminant-analysis-lda-be-used-to-plot-e
+from .utils import check_data
+
 class LDA:
-    # https://github.com/bot13956/linear-discriminant-analysis-iris-dataset/blob/master/LDA_irisdataset.py
     def __init__(self, num_components=None, verbose=False):
         self.num_classes = None
         self.num_features = None
@@ -62,7 +57,7 @@ class LDA:
         St = np.cov(X.T, bias=True)
         if self.verbose:
             print("Computing St: total scatter matrix")
-            print(St)
+            print(f"{St.shape}")
             print("-"*30)
 
         # Sw : within-class scatter matrix
@@ -74,14 +69,14 @@ class LDA:
 
         if self.verbose:
             print("Computing Sw : within-class scatter matrix")
-            print(f"{Sw}")
+            print(f"{Sw.shape}")
             print("-"*30)
 
         # Sb : between-classes scatter matrix
         Sb = St - Sw
         if self.verbose:
             print("Computing Sb : between-classes scatter matrix")
-            print(f"{Sb}")
+            print(f"{Sb.shape}")
             print("-"*30)
 
         # To solve the generalized eigenvalue problem scipy provides the function linalg.eigh
@@ -117,7 +112,6 @@ class LDA:
         if self.verbose:
             print(X.shape)
             print(self.eigenvects.shape)
-
         X_new = X @ self.eigenvects
         return X_new[:, :self.num_components]
 
@@ -127,4 +121,4 @@ class LDA:
 
     def predict(self, X):
         # TODO: implement for classification
-        return
+        pass
