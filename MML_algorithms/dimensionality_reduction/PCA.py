@@ -55,7 +55,8 @@ class PCA:
                 print(" - computing X columns means")
                 print(" - subtract the mean from the original data matrix")
                 print("-" * 50)
-
+        else:
+            X_ = X.copy()
         singular_values_ = None
 
 
@@ -163,7 +164,7 @@ class PCA:
                 print("Centering data matrix")
                 print("-" * 50)
         else:
-            X_ = X
+            X_ = X.copy()
         scores_ = X_ @ self.principal_components[:self.num_components].T
 
         if self.verbose:
