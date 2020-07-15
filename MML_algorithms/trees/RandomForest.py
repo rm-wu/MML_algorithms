@@ -10,8 +10,8 @@ def bootstrap_data(X, y):
 #TODO: max_depth=None??
 class RandomForest:
     def __init__(self,
-                 num_trees = 100,
-                 criterion='gini',
+                 num_trees=100,
+                 criterion='entropy',
                  max_depth=10,
                  min_samples_split=2,
                  max_features='sqrt',
@@ -26,13 +26,14 @@ class RandomForest:
         self.max_depth = max_depth
         self.min_sample_split = min_samples_split
         #TODO: leave only the possibility for sqrt and log2 e al max un int?
-        if max_features in ['auto', ' sqrt', 'log2']:
+        if max_features in ['sqrt', 'log2']:
             self.max_features = max_features
-        # TODO: elif  is int or None:
+        elif isinstance(max_features, int):
+            self.max_features = max_features
         else:
-            # TODO: modify
-            raise ValueError("")
+            raise ValueError("max_features must be 'sqrt', 'log2' or an int value")
         self.trees = None
+        self.verbose = verbose
 
     def fit(self, X, y):
         self.trees = []
@@ -49,9 +50,15 @@ class RandomForest:
 
     def predict(self, X):
         y_pred = np.array([tree.predict(X) for tree in self.trees])
-        y_pred = [self.majority_vote(y_pred[:, i]) for i in range(self.num_trees)]
+        print(y_pred.shape)
+        y_pred = np.array([self._majority_vote(y_pred[:, i]) for i in range(X.shape[0])])
+        print(y_pred.shape)
         return y_pred
 
     def _majority_vote(self, y_pred):
-        y_pred_u, y_pred_c = np.unique(y_pred)
-        return y_pred_u[np.argmax[y_pred_c]]
+        y_pred_u, y_pred_c = np.unique(y_pred, return_counts=True)
+        #label = np.argmax(y_pred_c)
+        #print(np.argmax(y_pred_c))
+        #print(y_pred_u, y_pred_c)
+        #print(y_pred_u[label])
+        return y_pred_u[np.argmax(y_pred_c)]
