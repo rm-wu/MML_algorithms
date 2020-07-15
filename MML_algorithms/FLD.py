@@ -1,31 +1,36 @@
 import numpy as np
 from scipy import linalg
-
 from .utils import check_data
 
-class LDA:
+
+class FLD:
     def __init__(self, num_components=None, verbose=False):
         self.num_classes = None
         self.num_features = None
         self.num_samples = None
         self.num_components = num_components
+        self.max_num_components = None
 
         # TODO: refactor with correct name
-        self.class_X_bar = None
-        self.X_bar = None
+        self.class_means = None
+        #self.class_X_bar = None
+        #self.X_bar = None
 
-        self.eigenvects = None
+
+        self._eigenvects = None
+        self.discriminants = None
         self.explained_variance_ratio = None
 
         self.verbose = verbose
 
     def fit(self, X, y):
-        '''
+        """
 
         :param X:
         :param y:
         :return:
-        '''
+        """
+
         self.num_samples, self.num_features = X.shape
         print(f"X shape : {self.num_samples} x {self.num_features} ")
 
@@ -33,7 +38,7 @@ class LDA:
         self.num_classes = y_unique.shape[0]
 
         self.max_num_components = min(self.num_classes - 1, self.num_features)
-        # TODO: address problem num_components not initialized == None
+
         if self.num_components is None:
             self.num_components = self.max_num_components
         elif self.num_components > self.max_num_components:
@@ -85,20 +90,21 @@ class LDA:
         print("eigenvect", eigenvects.shape)
         print("eigenvals", eigenvals.shape)
 
-        self.eigenvects = eigenvects[:, np.argsort(-eigenvals)]
+        self._eigenvects = eigenvects[:, np.argsort(-eigenvals)]
         eigenvals = np.sort(eigenvals)[::-1]
         self.explained_variance_ratio = eigenvals / np.sum(eigenvals)
+        self.discriminants = self._eigenvects[:, :self.num_components]
 
         if self.verbose:
-            print("Solving generalized eigenvalue problem Sb v = x Sw v")
-            print("(where x is the eigenvalue and v the eigenvector)")
+            print("Solving generalized eigenvalue problem Sb w = l Sw w")
+            print("(where l is the eigenvalue and w the eigenvector)")
 
             print("Sorted eigenvalues :")
             for eigval in eigenvals:
                 print(eigval)
             print()
             print("Sorted eigenvectors :")
-            for eigvect in self.eigenvects:
+            for eigvect in self._eigenvects:
                 print(eigvect)
             print()
             print("Explained variance ratio: ")
@@ -110,8 +116,8 @@ class LDA:
     def transform(self, X):
         if self.verbose:
             print(X.shape)
-            print(self.eigenvects.shape)
-        X_new = X @ self.eigenvects
+            print(self._eigenvects.shape)
+        X_new = X @ self._eigenvects
         return X_new[:, :self.num_components]
 
     def fit_transform(self, X, y):
