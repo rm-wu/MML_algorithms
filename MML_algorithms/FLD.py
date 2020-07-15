@@ -36,9 +36,8 @@ class LDA:
         # TODO: address problem num_components not initialized == None
         if self.num_components is None:
             self.num_components = self.max_num_components
-        elif self.max_num_components > self.max_num_components:
-            #TODO: raise error
-            return
+        elif self.num_components > self.max_num_components:
+            raise ValueError("num_components is greater than (num_classes - 1)")
 
         if self.verbose:
             print(f"The maximum number of components is {self.max_num_components}.")
