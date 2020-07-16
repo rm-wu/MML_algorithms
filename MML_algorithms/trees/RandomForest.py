@@ -57,8 +57,4 @@ class RandomForest:
 
     def _majority_vote(self, y_pred):
         y_pred_u, y_pred_c = np.unique(y_pred, return_counts=True)
-        #label = np.argmax(y_pred_c)
-        #print(np.argmax(y_pred_c))
-        #print(y_pred_u, y_pred_c)
-        #print(y_pred_u[label])
         return y_pred_u[np.argmax(y_pred_c)]

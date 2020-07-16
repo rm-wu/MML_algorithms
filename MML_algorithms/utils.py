@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def flip_svd(U, V, U_based=True):
     if U_based:
         max_values_idx_col = np.argmax(np.abs(U), axis=0)

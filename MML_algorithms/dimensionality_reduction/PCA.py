@@ -59,9 +59,6 @@ class PCA:
             X_ = X.copy()
         singular_values_ = None
 
-
-
-
         if X.shape[0] > X.shape[1]:
             #TODO: change it to (not shape1 >>> shape0)
             # case A
