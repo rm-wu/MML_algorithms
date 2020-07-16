@@ -2,50 +2,51 @@ import numpy as np
 from ..utils import check_data
 
 
-def linear_kernel(x1, x2, b=1.0):
+def linear_kernel(x1, x2, b=0.0):
     return (x1 @ x2.T) + b
 
 
 def rbf_kernel(x1, x2, gamma=1):
     if x1.ndim == 1 and x2.ndim == 1:
         # 1) basic case 2 arrays
-        result = np.exp(- (np.linalg.norm(x1 - x2, 2))**2 / (2 * gamma ** 2))
+        result = np.exp(- (np.linalg.norm(x1 - x2, 2))**2 * gamma) #/ (2 * sigma ** 2))
     elif (x1.ndim > 1 and x2.ndim == 1) or (x1.ndim == 1 and x2.ndim > 1):
         # 2) one array and 2-D array:
         # if one of the two elements is a matrix its additional dimension is broadcasted with numpy
         # to take the norm of the resulting array
-        result = np.exp(- (np.linalg.norm(x1 - x2, 2, axis=1) ** 2) / (2 * gamma ** 2))
+        result = np.exp(- (np.linalg.norm(x1 - x2, 2, axis=1) ** 2) * gamma)#/ (2 * sigma ** 2))
     elif x1.ndim > 1 and x2.ndim > 1:
         # 3) two 2-D arrays:
         # x1[:, np.newaxis] - x2[np.newaxis, :] => it is equal to the difference between each couple of rows
         # (i, j)-th element of the result contains the difference between x1[i] and x2[j]
         # linalg.norm on the 2nd axis takes the norm of the resulting array
-        result = np.exp(- (np.linalg.norm(x1[:, np.newaxis] - x2[np.newaxis, :], axis=2) ** 2) / (2 * gamma ** 2))
+        result = np.exp(- (np.linalg.norm(x1[:, np.newaxis] - x2[np.newaxis, :], axis=2) ** 2) * gamma) # / (2 * sigma ** 2))
     return result
 
 
-def poly_kernel(x1, x2, degree):
-    return (x1 @ x2.T)**degree
+#def poly_kernel(x1, x2, c=0.0, degree=2):
+#    return (x1 @ x2.T + c)**degree
 
 
 class SVM:
     def __init__(self, solver='SGD', kernel='linear', degree=2, C=0, gamma=1,
-                 max_iterations=1000, step_size=1e-2, tol=1e-2, eps=1e-2,
+                 max_iterations=10000, step_size=1e-3, tol=1e-2, eps=1e-2,
                  verbose=False):
         # Initialize solver type and hyperparameters
-        if solver not in ['SGD', 'BGD', 'SMO']:
+        if solver not in ['SGD', 'SMO']:
             raise ValueError("Parameter 'solver' can only take these values:\n"
                              "\t'SGD' : to use Stochastic Gradient Descent \n"
-                             "\t'BGD'  : to use Batch Gradient Descent\n"
                              "\t'SMO' : to use Sequential Minimum Optimization")
         self.solver = solver
         if solver == 'SMO':
             self.tol = tol
             self.eps = eps
             self._errors = None
+            self.C = C
         else:
             self.step_size = step_size
-        self.max_iterations = max_iterations
+            self.C = 1/C
+        self.max_iterations = int(max_iterations)
 
         # Initialize kernel type
         if kernel == 'linear':
@@ -53,15 +54,15 @@ class SVM:
         elif kernel == 'rbf':
             self.gamma = gamma
             self.kernel = lambda x1, x2: rbf_kernel(x1, x2, gamma=self.gamma)
-        elif kernel == 'poly':
-            self.kernel = poly_kernel
-            self.degree = degree
+        #elif kernel == 'poly':
+        #    self.degree = degree
+        #    self.kernel = lambda x1, x2: poly_kernel(x1, x2, degree=self.degree)
         else:
             raise ValueError("Parameter 'kernel' can only take these values:\n"
                              "\t'linear' : \n"
                              "\t'poly'   : \n"
                              "\t'rbf'    : \n")
-        self.C = C
+        #self.C = C
         self.W = None
         self.b = 0.0
         self.alphas = None
@@ -69,25 +70,33 @@ class SVM:
 
     def fit(self, X, y):
         if self.solver == 'SGD':
+            print("fit model using SGD")
             self._fit_SGD(X, y)
-        elif self.solver == 'BGD':
-            self._fit_BGD(X, y)
         elif self.solver == 'SMO':
             self._fit_SMO(X, y)
         return self
 
     def _fit_SGD(self, X, y):
+        self.X_train, self.y_train = X, y
+        self.W = np.zeros(self.X_train.shape[1])
         iter_per_epoch = X.shape[0]
         num_epochs = self.max_iterations // iter_per_epoch
         for epoch in range(num_epochs):
             shuffled_idx = np.random.permutation(X.shape[0])
-            for i in range(shuffled_idx.shape[0]):
-                if y[i] * (self.W @ X[i, :].T) <= 1:
-                    return
+            for i in shuffled_idx:
+                if self.y_train[i] * (np.dot(self.W, X[i]) - self.b) <= 1:
+                    #self.W = (1 - self.step_size) * self.W + self.step_size * self.C * X[i, :]
+                    #self.b = self.b - self.step_size * self.y_train[i]
+                    update_value_of_w = self.C * self.W - self.y_train[i] * self.X_train[i]
+                    update_value_of_b = self.y_train[i]
+                else:
+                    update_value_of_w = self.C * self.W
+                    update_value_of_b = 0
+                    #self.W = (1 - self.step_size) * self.W
+                    # weights and bias updates
+                self.W -= self.step_size * update_value_of_w
+                self.b -= self.step_size * update_value_of_b
         return
-
-    def _fit_BGD(self, X, y):
-        pass
 
     def _objective_function(self, X, y, alphas=None):
         if alphas is None:
@@ -98,7 +107,10 @@ class SVM:
         return obj_fun
 
     def decision_function(self, X_test):
-        result = (self.alphas * self.y_train) @ self.kernel(self.X_train, X_test) - self.b
+        if self.solver == 'SMO':
+            result = (self.alphas * self.y_train) @ self.kernel(self.X_train, X_test) - self.b
+        elif self.solver == 'SGD':
+            result = np.dot(X_test, self.W) - self.b
         return result
 
     def _fit_SMO(self, X, y):
@@ -273,7 +285,7 @@ class SVM:
     def _train_SMO(self):
         num_changed = 0
         examine_all = True
-        n_iter = 0
+        # n_iter = 0
         while num_changed > 0 or examine_all:
             num_changed = 0
             if examine_all:
@@ -282,7 +294,6 @@ class SVM:
                 for i in range(self.num_samples):
                     examine_result = self._examine_sample(i)
                     num_changed += examine_result
-                    # TODO: Store obj function for visualization?
             else:
                 #print(n_iter, "num_changed")
                 for idx1 in np.where((self.alphas != 0) & (self.alphas != self.C))[0]:
@@ -294,19 +305,17 @@ class SVM:
                 #     for idx in indexes[0]:
                 #         examine_result = self._examine_sample(idx)
                 #         num_changed += examine_result
-                        # TODO: Store obj function for visualization?
             #print(n_iter, num_changed)
             if examine_all:
                 examine_all = False
             elif num_changed == 0:
                 examine_all = True
-            n_iter += 1
+            # n_iter += 1
         return
 
     def predict(self, X):
         prediction = self.decision_function(X)
-        print(np.sign(prediction))
+        #print(np.sign(prediction))
         return np.sign(prediction)
 
 
-# TODO: put inside the kernels
