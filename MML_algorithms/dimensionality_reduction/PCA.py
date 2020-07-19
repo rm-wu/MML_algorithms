@@ -11,8 +11,6 @@ class PCA:
 
         :param num_components: int, default=2
             Number of components to keep
-        :param centering_data: bool, default=True
-            Centers the data matrix before performing PCA
         :param verbose: bool, default=False
             If True the class will print brief information about the operations performed by the class
         '''
@@ -29,8 +27,6 @@ class PCA:
         self.means = None
 
         self.principal_components = None
-        #self.singular_values = None
-
 
     def fit(self, X):
         '''
@@ -54,14 +50,13 @@ class PCA:
             print(" - subtract the mean from the original data matrix")
             print("-" * 50)
 
-        singular_values_ = None
+
 
         U, S, Vh = np.linalg.svd(X_, full_matrices=False)
         # to obtain a deterministic result flip the sign of the singular vectors which contain the greatest absolute
         # value component with negative sign
         flip_svd(U, Vh)
 
-        #self.principal_components = U[:, :self.num_components].T
         self.principal_components = Vh[:self.num_components]
         singular_values_ = S.copy()
 
@@ -78,14 +73,13 @@ class PCA:
                   f"\nthe largest singular values as principal components")
             print("-" * 50)
 
-        #self.eigen_values = (singular_values_ ** 2)/(self.num_samples - 1)  #np.sqrt(singular_values_[:self.num_components])
         self.explained_variance = (singular_values_ ** 2)/(self.num_samples - 1)
         self.explained_variance_ratio = self.explained_variance / self.explained_variance.sum()
 
         if self.verbose:
             print(f"- Summary of SVD results: ")
             print()
-            print(f"- Eigen Values of Cov(X):")
+            print(f"- Eigenvalues of sample covariance matrix of X:")
             for i in range(self.explained_variance.shape[0]):
                 print(f"\t{i+1} - {self.explained_variance[i]}")
             print()
@@ -107,13 +101,11 @@ class PCA:
             print("Transform data : ")
             print("-" * 50)
 
-        if self.centering_data:
-            X_ = X - self.means
-            if self.verbose:
-                print("Centering data matrix")
-                print("-" * 50)
-        else:
-            X_ = X.copy()
+        X_ = X - self.means
+        if self.verbose:
+            print("Centering data matrix")
+            print("-" * 50)
+
         scores_ = X_ @ self.principal_components[:self.num_components].T
 
         if self.verbose:
@@ -125,8 +117,6 @@ class PCA:
             print("-" * 50)
         return scores_
 
-    #def biplot(self):
-    #   pass
 
     def plot_explained_variance(self):
         trace1 = dict(
@@ -164,4 +154,3 @@ class PCA:
 
         fig = dict(data=data, layout=layout)
         iplot(fig, filename='selecting-principal-components')
-        #plotly.offline.init_notebook_mode(connected=True)
