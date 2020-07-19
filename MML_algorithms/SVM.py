@@ -24,13 +24,14 @@ def rbf_kernel(x1, x2, gamma=1):
     return result
 
 
-#def poly_kernel(x1, x2, c=0.0, degree=2):
-#    return (x1 @ x2.T + c)**degree
-
-
 class SVM:
-    def __init__(self, solver='SGD', kernel='linear', degree=2, C=0, gamma=1,
-                 max_iterations=10000, step_size=1e-3, tol=1e-2, eps=1e-2,
+    def __init__(self,
+                 solver='SMO',
+                 kernel='linear',
+                 C=1.0, gamma=1,
+                 tol=1e-4, eps=1e-4,
+                 max_iterations=1e5, step_size=1e-3,
+                 regularization_weight=1.0,
                  verbose=False):
         # Initialize solver type and hyperparameters
         if solver not in ['SGD', 'SMO']:
@@ -45,7 +46,9 @@ class SVM:
             self.C = C
         else:
             self.step_size = step_size
-            self.C = 1/C
+            self.regularization_weight = regularization_weight
+            self.epochs=1000
+            self.C = 1/(C * 100)
         self.max_iterations = int(max_iterations)
 
         # Initialize kernel type
@@ -54,15 +57,15 @@ class SVM:
         elif kernel == 'rbf':
             self.gamma = gamma
             self.kernel = lambda x1, x2: rbf_kernel(x1, x2, gamma=self.gamma)
-        #elif kernel == 'poly':
-        #    self.degree = degree
-        #    self.kernel = lambda x1, x2: poly_kernel(x1, x2, degree=self.degree)
+        # elif kernel == 'poly':
+        #     self.degree = degree
+        #     self.kernel = lambda x1, x2: poly_kernel(x1, x2, degree=self.degree)
         else:
             raise ValueError("Parameter 'kernel' can only take these values:\n"
                              "\t'linear' : \n"
-                             "\t'poly'   : \n"
+                             #"\t'poly'   : \n"
                              "\t'rbf'    : \n")
-        #self.C = C
+        # self.C = C
         self.W = None
         self.b = 0.0
         self.alphas = None
@@ -70,7 +73,6 @@ class SVM:
 
     def fit(self, X, y):
         if self.solver == 'SGD':
-            print("fit model using SGD")
             self._fit_SGD(X, y)
         elif self.solver == 'SMO':
             self._fit_SMO(X, y)
@@ -79,23 +81,18 @@ class SVM:
     def _fit_SGD(self, X, y):
         self.X_train, self.y_train = X, y
         self.W = np.zeros(self.X_train.shape[1])
-        iter_per_epoch = X.shape[0]
-        num_epochs = self.max_iterations // iter_per_epoch
-        for epoch in range(num_epochs):
-            shuffled_idx = np.random.permutation(X.shape[0])
-            for i in shuffled_idx:
-                if self.y_train[i] * (np.dot(self.W, X[i]) - self.b) <= 1:
-                    #self.W = (1 - self.step_size) * self.W + self.step_size * self.C * X[i, :]
-                    #self.b = self.b - self.step_size * self.y_train[i]
-                    update_value_of_w = self.C * self.W - self.y_train[i] * self.X_train[i]
-                    update_value_of_b = self.y_train[i]
+        for epoch in range(self.epochs):
+            shuffled_idx = np.random.permutation(self.X_train.shape[0])
+            for random_idx in shuffled_idx:
+                if self.y_train[random_idx] * (np.dot(self.W, self.X_train[random_idx])- self.b) >= 1:
+                    update_w = self.regularization_weight * self.W
+                    update_b = 0
                 else:
-                    update_value_of_w = self.C * self.W
-                    update_value_of_b = 0
-                    #self.W = (1 - self.step_size) * self.W
-                    # weights and bias updates
-                self.W -= self.step_size * update_value_of_w
-                self.b -= self.step_size * update_value_of_b
+                    update_w = self.regularization_weight * self.W - \
+                               self.y_train[random_idx] * self.X_train[random_idx]
+                    update_b = self.y_train[random_idx]
+                self.W -= self.step_size * update_w
+                self.b -= self.step_size * update_b
         return
 
     def _objective_function(self, X, y, alphas=None):
@@ -108,13 +105,11 @@ class SVM:
 
     def decision_function(self, X_test):
         if self.solver == 'SMO':
-            result = (self.alphas * self.y_train) @ self.kernel(self.X_train, X_test) - self.b
+            return (self.alphas * self.y_train) @ self.kernel(self.X_train, X_test) - self.b
         elif self.solver == 'SGD':
-            result = np.dot(X_test, self.W) - self.b
-        return result
+            return np.dot(X_test, self.W) - self.b
 
     def _fit_SMO(self, X, y):
-        # TODO: check that all the y are or 1 or -1
         check_data(X)
 
         # Initialization of all the elements needed for the optimization
@@ -151,7 +146,6 @@ class SVM:
             return 0
 
         # Compute the kernels for point1 and point2
-        # TODO: put kernel implementaiton inside the class
         k11 = self.kernel(self.X_train[idx1], self.X_train[idx1])
         k12 = self.kernel(self.X_train[idx1], self.X_train[idx2])
         k22 = self.kernel(self.X_train[idx2], self.X_train[idx2])
@@ -237,7 +231,6 @@ class SVM:
         alpha2 = self.alphas[idx2] # Lagrange multiplier for idx_2
         E2 = self._errors[idx2]
         r2 = E2 * y2
-        #print(f"examine_example {idx2}", y2, alpha2, E2, r2)
 
         if (r2 < -self.tol and alpha2 < self.C) or (r2 > self.tol and alpha2 > 0):
             # if number of non-zero alphas > 1 and non-C alphas > 1
@@ -253,14 +246,6 @@ class SVM:
                     return 1
 
             # Loop through all non-zero and non-C alphas, starting at a random point
-            # j = np.random.choice(np.arange(self.num_samples)) # starting index
-            # alphas_mask = (self.alphas != 0) & (self.alphas != self.C)
-            # for _ in range(self.num_samples):
-            #     if alphas_mask[j]:
-            #         step_result = self._take_step(j, idx2)
-            #         if step_result:
-            #             return 1
-            #     j = (j + 1) % self.num_samples
             for idx1 in np.roll(np.where((self.alphas != 0) & (self.alphas != self.C))[0],
                               np.random.choice(np.arange(self.num_samples))):
                 step_result = self._take_step(idx1, idx2)
@@ -268,14 +253,8 @@ class SVM:
                     return 1
 
             # # Loop through all idx1, starting at a random point
-            # j = np.random.choice(np.arange(self.num_samples))  # starting index
-            # for _ in range(self.num_samples):
-            #     if self._take_step(j, idx2):
-            #         return 1
-            #     j = (j + 1) % self.num_samples
             for idx1 in np.roll(np.arange(self.num_samples),
                                 np.random.choice(np.arange(self.num_samples))):
-                #print("loop2", idx1)
                 step_result = self._take_step(idx1, idx2)
                 if step_result:
                     return 1
@@ -285,37 +264,26 @@ class SVM:
     def _train_SMO(self):
         num_changed = 0
         examine_all = True
-        # n_iter = 0
         while num_changed > 0 or examine_all:
             num_changed = 0
             if examine_all:
-                #print(n_iter, "examine_all")
                 # loop over all the training samples
                 for i in range(self.num_samples):
                     examine_result = self._examine_sample(i)
                     num_changed += examine_result
             else:
-                #print(n_iter, "num_changed")
+                # loop over all the alphas != 0 and != C
                 for idx1 in np.where((self.alphas != 0) & (self.alphas != self.C))[0]:
                     examine_result = self._examine_sample(idx1)
                     num_changed += examine_result
-                # loop over all the alphas != 0 and != C
-                # indexes = np.argwhere((self.alphas != 0.0) & (self.alphas != self.C))
-                # if len(indexes) > 0:
-                #     for idx in indexes[0]:
-                #         examine_result = self._examine_sample(idx)
-                #         num_changed += examine_result
-            #print(n_iter, num_changed)
             if examine_all:
                 examine_all = False
             elif num_changed == 0:
                 examine_all = True
-            # n_iter += 1
         return
 
     def predict(self, X):
         prediction = self.decision_function(X)
-        #print(np.sign(prediction))
         return np.sign(prediction)
 
 
