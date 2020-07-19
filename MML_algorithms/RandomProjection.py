@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.random import RandomState
-from ..utils import check_data
+from .utils import check_data
 
 
 class GaussianRandomProjection:
