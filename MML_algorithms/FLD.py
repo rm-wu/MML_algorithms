@@ -104,9 +104,17 @@ class FLD:
 
     def transform(self, X):
         if self.verbose:
-            print(X.shape)
-            print(self._eigenvects.shape)
+            print("Transform data : ")
+            print("-" * 50)
         X_new = X @ self._eigenvects
+
+        if self.verbose:
+            print(f"- Computing projection")
+            print(f"")
+            print(f"\t- Original X dimensions : {X.shape[0]} x {X.shape[1]}")
+            print(f"\t- Projection dimensions : {X_new.shape[0]} x {self.num_components}")
+            print()
+            print("-" * 50)
         return X_new[:, :self.num_components]
 
     def fit_transform(self, X, y):
