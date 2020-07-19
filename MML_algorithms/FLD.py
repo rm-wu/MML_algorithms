@@ -11,7 +11,6 @@ class FLD:
         self.num_components = num_components
         self.max_num_components = None
 
-        # TODO: refactor with correct name
         self.class_means = None
 
         self._eigenvects = None
@@ -91,17 +90,12 @@ class FLD:
         # The actual problem is Sb v = x Sw v
         # https://stackoverflow.com/questions/24752393/solve-generalized-eigenvalue-problem-in-numpy
         eigenvals, eigenvects = linalg.eigh(Sb, Sw)
-        #print("eigenvect", eigenvects.shape)
-        #print("eigenvals", eigenvals.shape)
 
         self._eigenvects = eigenvects[:, np.argsort(-eigenvals)]
-        #eigenvals = np.sort(eigenvals)[::-1]
-
         self.discriminants = self._eigenvects[:, :self.num_components]
 
         if self.verbose:
             print("Solving generalized eigenvalue problem Sb w = λ Sw w")
-            print("(where λ is the eigenvalue and w the eigenvector)")
             print("-"*50)
             print(f"-Sorting eigenvalues and corresponding eigenvectors")
             print(f"- Taking the {self.num_components} eigenvectors as discriminants")
