@@ -1,5 +1,5 @@
 import numpy as np
-from ..utils import check_data
+from .utils import check_data
 
 
 def linear_kernel(x1, x2, b=0.0):
@@ -110,7 +110,7 @@ class SVM:
             return np.dot(X_test, self.W) - self.b
 
     def _fit_SMO(self, X, y):
-        check_data(X)
+        #check_data(X)
 
         # Initialization of all the elements needed for the optimization
         self.num_samples, self.num_features = X.shape
