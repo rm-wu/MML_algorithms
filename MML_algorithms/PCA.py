@@ -1,9 +1,9 @@
 import numpy as np
 from plotly.offline import iplot
-import plotly.offline
-from matplotlib import pyplot as plt
+#import plotly.offline
+#from matplotlib import pyplot as plt
 
-from ..utils import flip_svd, check_data
+from .utils import flip_svd, check_data
 
 class PCA:
     def __init__(self, num_components=2, verbose=False):
