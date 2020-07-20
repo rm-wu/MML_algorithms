@@ -51,7 +51,7 @@ class SVM:
             self.regularization_weight = regularization_weight
             self.max_epochs=max_epochs
             #self.C = 1/(C * 100)
-        self.max_iterations = int(max_iterations)
+            #self.max_iterations = int(max_iterations)
 
         # Initialize kernel type
         if kernel == 'linear':
