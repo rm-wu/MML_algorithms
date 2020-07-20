@@ -83,7 +83,7 @@ class SVM:
     def _fit_SGD(self, X, y):
         self.X_train, self.y_train = X, y
         self.W = np.zeros(self.X_train.shape[1])
-        for epoch in range(self.epochs):
+        for epoch in range(self.max_epochs):
             shuffled_idx = np.random.permutation(self.X_train.shape[0])
             for random_idx in shuffled_idx:
                 if self.y_train[random_idx] * (np.dot(self.W, self.X_train[random_idx])- self.b) >= 1:
