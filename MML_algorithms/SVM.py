@@ -30,7 +30,9 @@ class SVM:
                  kernel='linear',
                  C=1.0, gamma=1,
                  tol=1e-4, eps=1e-4,
-                 max_iterations=1e5, step_size=1e-3,
+                 #max_iterations=1e5,
+                 max_epochs=1000,
+                 step_size=1e-3,
                  regularization_weight=1.0,
                  verbose=False):
         # Initialize solver type and hyperparameters
@@ -47,8 +49,8 @@ class SVM:
         else:
             self.step_size = step_size
             self.regularization_weight = regularization_weight
-            self.epochs=1000
-            self.C = 1/(C * 100)
+            self.max_epochs=max_epochs
+            #self.C = 1/(C * 100)
         self.max_iterations = int(max_iterations)
 
         # Initialize kernel type
