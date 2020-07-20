@@ -11,7 +11,6 @@ class Node:
         self.leaf_value = leaf_value
 
 
-# TODO: max_depth=None??
 class DecisionTree:
     def __init__(self,
                  criterion='entropy',
@@ -24,7 +23,7 @@ class DecisionTree:
         if criterion in ['gini', 'entropy']:
             self.criterion = criterion
         else:
-            # TODO: raise vaulue
+
             raise ValueError("criterion must be or 'gini' or 'entropy'")
 
         self.min_samples_split = min_samples_split
@@ -77,7 +76,7 @@ class DecisionTree:
         else:
             splitting_features_idx = range(self.num_features)
 
-        best_information_gain = -1  # TODO:check if there is a different lower bound
+        best_information_gain = -1
         split_feature_idx = None
         split_threshold = None
 
@@ -115,7 +114,6 @@ class DecisionTree:
     def _compute_split_quality(self, labels):
         labels_u, labels_c = np.unique(labels, return_counts=True)
         probabilities = labels_c / labels.shape[0]
-        # TODO: check computations
         if self.criterion == 'gini':
             return np.sum([class_p * (1 - class_p) for class_p in probabilities])
         elif self.criterion == 'entropy':
@@ -125,7 +123,6 @@ class DecisionTree:
         y_pred = [self._traverse_decision_tree(x, self.root_node) for x in X[:]]
         return np.array(y_pred)
 
-    # TODO: add print for verbose
     def _traverse_decision_tree(self, sample, node):
         if node.leaf_value is not None:
             return node.leaf_value

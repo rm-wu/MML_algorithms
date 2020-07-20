@@ -7,7 +7,6 @@ def bootstrap_data(X, y):
     random_idx = np.random.choice(n_samples, n_samples, replace=True) # sample with replacement
     return X[random_idx], y[random_idx]
 
-#TODO: max_depth=None??
 class RandomForest:
     def __init__(self,
                  num_trees=100,
@@ -25,13 +24,10 @@ class RandomForest:
             raise ValueError("")
         self.max_depth = max_depth
         self.min_sample_split = min_samples_split
-        #TODO: leave only the possibility for sqrt and log2 e al max un int?
         if max_features in ['sqrt', 'log2']:
             self.max_features = max_features
-        elif isinstance(max_features, int):
-            self.max_features = max_features
         else:
-            raise ValueError("max_features must be 'sqrt', 'log2' or an int value")
+            raise ValueError("max_features must be 'sqrt' or 'log2'")
         self.trees = None
         self.verbose = verbose
 
@@ -50,9 +46,7 @@ class RandomForest:
 
     def predict(self, X):
         y_pred = np.array([tree.predict(X) for tree in self.trees])
-        print(y_pred.shape)
         y_pred = np.array([self._majority_vote(y_pred[:, i]) for i in range(X.shape[0])])
-        print(y_pred.shape)
         return y_pred
 
     def _majority_vote(self, y_pred):
